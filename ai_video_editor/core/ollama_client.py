@@ -1,15 +1,15 @@
 import json
 import logging
-from typing import Any
+from typing import Any, AsyncIterator
 import ollama
 from ollama import AsyncClient
 from ..config.settings import Settings
-from .types import Message, ChatResponse, ToolDefinition
+from .types import BaseLLMClient, Message, ChatResponse, ToolDefinition
 
 logger = logging.getLogger(__name__)
 
 
-class OllamaClient:
+class OllamaClient(BaseLLMClient):
     def __init__(self, model: str | None = None, settings: Settings | None = None):
         self.settings = settings or Settings()
         self.model = model or self.settings.default_model
@@ -21,7 +21,7 @@ class OllamaClient:
         messages: list[Message],
         tools: list[ToolDefinition] | None = None,
         stream: bool = False
-    ) -> Any:
+    ) -> ChatResponse | AsyncIterator[ChatResponse]:
         msg_dicts = [msg.model_dump(exclude_none=True) for msg in messages]
         
         tool_dicts = None

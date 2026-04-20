@@ -4,8 +4,8 @@ import logging
 import re
 from pathlib import Path
 from typing import Any, Callable
-from ..core.ollama_client import OllamaClient
-from ..core.types import Message, ToolDefinition
+from ..core import create_llm_client
+from ..core.types import BaseLLMClient, Message, ToolDefinition
 from ..tools.video_ops import VideoTool
 from ..tools.file_ops import FileTool
 from ..config.settings import Settings
@@ -206,16 +206,16 @@ Workflow rules:
 
 Available tools include video probing, trimming, resizing, fps/codec changes, audio extraction, concatenation, watermarks, speed/reverse, gif/frame extraction, color/brightness/contrast/vignette/blur/sharpen, rotate/flip/crop/pad, fades, text overlay, audio volume/fade/normalize, format conversion, grayscale/sepia, idle frame detection and speed-up, caption generation/embedding, and file operations (read, list, delete to recycle bin, copy, move, create directory)."""
 
-    def __init__(self, settings: Settings | None = None):
+    def __init__(self, settings: Settings | None = None, llm_client: BaseLLMClient | None = None):
         self.settings = settings or Settings()
-        self.ollama = OllamaClient(settings=self.settings)
+        self.llm = llm_client or create_llm_client(self.settings)
         self.video_tool = VideoTool(self.settings)
         self.file_tool = FileTool(self.settings)
         self._tool_registry: dict[str, Callable] = {}
         self._register_tools()
         self.messages: list[Message] = [Message(role="system", content=self.SYSTEM_PROMPT)]
         self.max_iterations: int = 15
-        logger.info("VideoEditorAgent initialized (model=%s, max_iterations=%d)", self.settings.default_model, self.max_iterations)
+        logger.info("VideoEditorAgent initialized (provider=%s, model=%s, max_iterations=%d)", self.settings.llm_provider, self.settings.default_model, self.max_iterations)
 
     def reset(self) -> None:
         """Clear conversation history (keeps system prompt)."""
@@ -236,7 +236,7 @@ Available tools include video probing, trimming, resizing, fps/codec changes, au
 
         for iteration in range(self.max_iterations):
             logger.debug("Agent iteration %d/%d", iteration + 1, self.max_iterations)
-            response = await self.ollama.chat(self.messages, tools=tools)
+            response = await self.llm.chat(self.messages, tools=tools)
             msg = response.message
             tool_calls = getattr(msg, "tool_calls", None) or []
 
@@ -270,10 +270,13 @@ Available tools include video probing, trimming, resizing, fps/codec changes, au
                 if on_tool_call:
                     on_tool_call(tool_name or "", args, result)
 
+                # Use the real tool_call id when available (required by OpenAI/Google),
+                # fall back to tool_name for Ollama compatibility.
+                call_id = getattr(tc, "id", None) or tool_name
                 self.messages.append(Message(
                     role="tool",
                     content=json.dumps(result, default=str),
-                    tool_call_id=tool_name,
+                    tool_call_id=call_id,
                 ))
 
         warning = f"[agent] Stopped after {self.max_iterations} iterations without a final answer."

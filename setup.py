@@ -15,7 +15,9 @@ setup(
     ],
     extras_require={
         "audio": ["openai-whisper>=20231117"],
-        "all": ["openai-whisper>=20231117"],
+        "openai": ["openai>=1.0.0"],
+        "google": ["google-genai>=1.0.0"],
+        "all": ["openai-whisper>=20231117", "openai>=1.0.0", "google-genai>=1.0.0"],
         "dev": ["pytest", "pytest-asyncio"],
     },
     entry_points={
