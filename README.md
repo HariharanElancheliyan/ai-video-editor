@@ -10,6 +10,8 @@ An AI-powered video editing tool that uses [Ollama](https://ollama.com/) LLMs an
 ### Format Conversion Example
 ![Format Conversion](screenshots/format%20conversion.png)
 
+### Example Video 
+https://github.com/user-attachments/assets/0918e432-27bf-4f70-a6cc-39e273167c55
 
 ## Features
 
