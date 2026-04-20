@@ -8,6 +8,7 @@ from ..core import create_llm_client
 from ..core.types import BaseLLMClient, Message, ToolDefinition
 from ..tools.video_ops import VideoTool
 from ..tools.file_ops import FileTool
+from ..tools.ffmpeg_exec import FFmpegExecTool
 from ..config.settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -83,6 +84,9 @@ class VideoEditorAgent:
             if method is not None and method_name not in self._tool_registry:
                 self._tool_registry[method_name] = method
 
+        # FFmpeg exec tool
+        self._tool_registry["run_ffmpeg_commands"] = self.ffmpeg_exec_tool.run_commands
+
     def get_tools(self) -> list[ToolDefinition]:
         tools = []
         tool_descriptions = {
@@ -133,6 +137,7 @@ class VideoEditorAgent:
             "copy_file": "Copy a file or folder to a new location",
             "file_exists": "Check whether a path exists and its type (file or directory)",
             "rename_file": "Rename a file or folder in-place (same directory, new name)",
+            "run_ffmpeg_commands": "Execute one or more raw ffmpeg commands sequentially. Each command string should contain only the ffmpeg arguments (the 'ffmpeg -y' prefix is added automatically). Use this for any ffmpeg operation not covered by the other specialized tools.",
         }
         
         for name, params in {
@@ -183,6 +188,7 @@ class VideoEditorAgent:
             "copy_file": {"type": "object", "properties": {"source": {"type": "string"}, "destination": {"type": "string"}}, "required": ["source", "destination"]},
             "file_exists": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
             "rename_file": {"type": "object", "properties": {"file_path": {"type": "string"}, "new_name": {"type": "string"}}, "required": ["file_path", "new_name"]},
+            "run_ffmpeg_commands": {"type": "object", "properties": {"commands": {"type": "array", "items": {"type": "string"}, "description": "List of ffmpeg argument strings to execute sequentially. Do NOT include 'ffmpeg' or '-y' — they are added automatically. Example: [\"-i input.mp4 -vf scale=1280:720 output.mp4\"]"}}, "required": ["commands"]},
         }.items():
             tools.append(ToolDefinition(
                 type="function",
@@ -204,13 +210,14 @@ Workflow rules:
 - Prefer calling get_video_info first when you need details about an unknown input file.
 - Always use absolute or workspace-relative paths exactly as provided by the user.
 
-Available tools include video probing, trimming, resizing, fps/codec changes, audio extraction, concatenation, watermarks, speed/reverse, gif/frame extraction, color/brightness/contrast/vignette/blur/sharpen, rotate/flip/crop/pad, fades, text overlay, audio volume/fade/normalize, format conversion, grayscale/sepia, idle frame detection and speed-up, caption generation/embedding, and file operations (read, list, delete to recycle bin, copy, move, create directory)."""
+Available tools include video probing, trimming, resizing, fps/codec changes, audio extraction, concatenation, watermarks, speed/reverse, gif/frame extraction, color/brightness/contrast/vignette/blur/sharpen, rotate/flip/crop/pad, fades, text overlay, audio volume/fade/normalize, format conversion, grayscale/sepia, idle frame detection and speed-up, caption generation/embedding, file operations (read, list, delete to recycle bin, copy, move, create directory), and a generic run_ffmpeg_commands tool for executing any raw ffmpeg commands not covered by other tools."""
 
     def __init__(self, settings: Settings | None = None, llm_client: BaseLLMClient | None = None):
         self.settings = settings or Settings()
         self.llm = llm_client or create_llm_client(self.settings)
         self.video_tool = VideoTool(self.settings)
         self.file_tool = FileTool(self.settings)
+        self.ffmpeg_exec_tool = FFmpegExecTool(self.settings)
         self._tool_registry: dict[str, Callable] = {}
         self._register_tools()
         self.messages: list[Message] = [Message(role="system", content=self.SYSTEM_PROMPT)]
