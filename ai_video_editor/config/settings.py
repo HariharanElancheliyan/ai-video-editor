@@ -39,8 +39,17 @@ class Settings(BaseModel):
 def setup_logging(level: str | None = None) -> None:
     """Configure logging for the application."""
     log_level = (level or Settings().log_level).upper()
-    logging.basicConfig(
-        level=getattr(logging, log_level, logging.INFO),
-        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    log_dir = Path("./logs")
+    log_dir.mkdir(exist_ok=True)
+    log_file = log_dir / "ai_video_editor.log"
+
+    file_handler = logging.FileHandler(log_file, encoding="utf-8")
+    file_handler.setLevel(getattr(logging, log_level, logging.INFO))
+    file_handler.setFormatter(logging.Formatter(
+        fmt="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    ))
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(getattr(logging, log_level, logging.INFO))
+    root_logger.addHandler(file_handler)
