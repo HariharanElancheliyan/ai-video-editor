@@ -11,7 +11,7 @@ from .config.settings import Settings, setup_logging
 
 console = Console()
 app = typer.Typer(
-    help="AI-powered video editing tool using Ollama",
+    help="AI-powered video editing tool using LLMs (Ollama / OpenAI / Google)",
     invoke_without_command=True,
     no_args_is_help=False,
 )
@@ -32,8 +32,9 @@ def _print_tool_call(name: str, args: dict, result: dict) -> None:
 
 async def _run_loop(settings: Settings, initial_prompt: str | None = None) -> None:
     agent = VideoEditorAgent(settings)
+    provider_label = settings.llm_provider.upper()
     console.print(Panel.fit(
-        f"[bold green]AI Video Editor[/bold green]  model=[cyan]{settings.default_model}[/cyan]\n"
+        f"[bold green]AI Video Editor[/bold green]  provider=[magenta]{provider_label}[/magenta]  model=[cyan]{settings.default_model}[/cyan]\n"
         "Type your request. Commands: [yellow]/reset[/yellow] clear history, "
         "[yellow]/exit[/yellow] or [yellow]/quit[/yellow] leave.",
         border_style="green",
@@ -81,11 +82,25 @@ async def _run_loop(settings: Settings, initial_prompt: str | None = None) -> No
             console.print(Panel("[dim](no reply)[/dim]", title="assistant", border_style="cyan"))
 
 
+def _apply_overrides(settings: Settings, provider: str | None, model: str | None) -> None:
+    """Apply CLI overrides to settings in-place."""
+    if provider:
+        settings.llm_provider = provider  # type: ignore[assignment]
+    if model:
+        if settings.llm_provider == "openai":
+            settings.openai_model = model
+        elif settings.llm_provider == "google":
+            settings.google_model = model
+        else:
+            settings.ollama_model = model
+
+
 @app.callback()
 def main(
     ctx: typer.Context,
     prompt: str = typer.Option(None, "-p", "--prompt", help="Optional initial prompt; agent then continues interactively."),
-    model: str = typer.Option(None, "-m", "--model", help="Ollama model to use"),
+    model: str = typer.Option(None, "-m", "--model", help="LLM model to use"),
+    provider: str = typer.Option(None, "--provider", help="LLM provider: ollama, openai, or google"),
     log_level: str = typer.Option(None, "--log-level", help="Logging level (DEBUG, INFO, WARNING, ERROR)"),
 ):
     """Run the agent in an interactive loop (default)."""
@@ -93,20 +108,19 @@ def main(
         return
     settings = Settings()
     setup_logging(log_level or settings.log_level)
-    if model:
-        settings.default_model = model
+    _apply_overrides(settings, provider, model)
     asyncio.run(_run_loop(settings, initial_prompt=prompt))
 
 
 @app.command()
 def edit(
     prompt: str = typer.Option(..., "-p", "--prompt", help="Editing prompt (single-shot, then exit)"),
-    model: str = typer.Option(None, "-m", "--model", help="Ollama model to use"),
+    model: str = typer.Option(None, "-m", "--model", help="LLM model to use"),
+    provider: str = typer.Option(None, "--provider", help="LLM provider: ollama, openai, or google"),
 ):
     """Run a single prompt through the agent loop and exit."""
     settings = Settings()
-    if model:
-        settings.default_model = model
+    _apply_overrides(settings, provider, model)
     agent = VideoEditorAgent(settings)
 
     async def run():
@@ -132,11 +146,16 @@ def info(
 
 
 @app.command()
-def models():
-    """List available Ollama models"""
-    from .core.ollama_client import OllamaClient
+def models(
+    provider: str = typer.Option(None, "--provider", help="LLM provider: ollama, openai, or google"),
+):
+    """List available models for the configured provider"""
+    from .core import create_llm_client
 
-    client = OllamaClient()
+    settings = Settings()
+    if provider:
+        settings.llm_provider = provider  # type: ignore[assignment]
+    client = create_llm_client(settings)
     for model in client.list_models():
         rprint(f"[green]{model.get('model', model.get('name', 'unknown'))}[/green]")
 
