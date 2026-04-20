@@ -1,6 +1,6 @@
 # AI Video Editor
 
-An AI-powered video editing tool that uses [Ollama](https://ollama.com/) LLMs and FFmpeg to perform video editing tasks through natural language. Describe what you want done and the agent will select and execute the right FFmpeg operations automatically.
+An AI-powered video editing tool that uses LLMs and FFmpeg to perform video editing tasks through natural language. Supports multiple LLM providers — [Ollama](https://ollama.com/) (local) and [Google GenAI](https://ai.google.dev/) (Gemini). Describe what you want done and the agent will select and execute the right FFmpeg operations automatically.
 
 ## Screenshots
 
@@ -29,10 +29,12 @@ https://github.com/user-attachments/assets/0918e432-27bf-4f70-a6cc-39e273167c55
 ## Prerequisites
 
 - **Python 3.10+**
-- **[Ollama](https://ollama.com/)** — must be installed and running locally (default `http://localhost:11434`). Pull at least one model before using the tool:
-  ```bash
-  ollama pull qwen3.6:latest
-  ```
+- **An LLM provider** (at least one):
+  - **[Ollama](https://ollama.com/)** (default) — must be installed and running locally (default `http://localhost:11434`). Pull at least one model before using the tool:
+    ```bash
+    ollama pull qwen3.6:latest
+    ```
+  - **[Google GenAI](https://ai.google.dev/)** (Gemini) — requires an API key (`GOOGLE_API_KEY`). Install the extra: `pip install -e ".[google]"`
 - **FFmpeg** — if FFmpeg is already on your system PATH it will be used automatically. Otherwise the bundled [`static-ffmpeg`](https://pypi.org/project/static-ffmpeg/) package downloads a portable copy on first run, so no manual install is needed.
 
 ## Installation
@@ -70,6 +72,12 @@ pip install -e .
 pip install -e ".[audio]"
 ```
 
+**With Google GenAI (Gemini) provider:**
+
+```bash
+pip install -e ".[google]"
+```
+
 **All extras:**
 
 ```bash
@@ -93,9 +101,15 @@ Settings are loaded from environment variables (or a `.env` file):
 
 | Variable | Default | Description |
 |---|---|---|
+| `LLM_PROVIDER` | `ollama` | LLM backend to use: `ollama` or `google` |
+| **Ollama** | | |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
 | `OLLAMA_MODEL` | `qwen3.6:latest` | Default LLM model |
 | `OLLAMA_VISION_MODEL` | `qwen3.6:latest` | Vision model for screen captions |
+| **Google GenAI** | | |
+| `GOOGLE_API_KEY` | | Google AI API key |
+| `GOOGLE_MODEL` | `gemini-2.5-flash` | Default Gemini model |
+| `GOOGLE_VISION_MODEL` | `gemini-2.5-flash` | Vision model for screen captions |
 
 ## Usage
 
@@ -138,6 +152,19 @@ Use any listed model name with `-m`:
 python -m ai_video_editor -m qwen3:30b
 ```
 
+### Switching Providers
+
+Set `LLM_PROVIDER` in your `.env` file or as an environment variable:
+
+```bash
+# Use Google Gemini
+LLM_PROVIDER=google
+GOOGLE_API_KEY=your-key-here
+
+# Use Ollama (default)
+LLM_PROVIDER=ollama
+```
+
 ### Get Video Info
 
 ```bash
@@ -173,6 +200,7 @@ ai_video_editor/
 │   └── settings.py           # Environment-based configuration
 ├── core/
 │   ├── ollama_client.py      # Async Ollama API client
+│   ├── google_client.py      # Async Google GenAI (Gemini) client
 │   └── types.py              # Pydantic models (Message, ToolDefinition, etc.)
 ├── tools/
 │   ├── video_ops.py          # FFmpeg-backed video operations (35+ tools)
