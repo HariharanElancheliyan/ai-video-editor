@@ -138,7 +138,7 @@ def models():
 
     client = OllamaClient()
     for model in client.list_models():
-        rprint(f"[green]{model.get('name', 'unknown')}[/green]")
+        rprint(f"[green]{model.get('model', model.get('name', 'unknown'))}[/green]")
 
 
 if __name__ == "__main__":

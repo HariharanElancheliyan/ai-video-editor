@@ -84,7 +84,7 @@ pip install -e ".[all]"
 ### 4. Verify the installation
 
 ```bash
-ai-video-editor --help
+python -m ai_video_editor --help
 ```
 
 ## Configuration
@@ -117,12 +117,50 @@ You: add captions to demo.mp4
 Commands: `/reset` to clear history, `/exit` to quit.
 
 
+### Single-Shot Edit
+
+Run one prompt and exit (no interactive loop):
+
+```bash
+python -m ai_video_editor edit -p "trim input.mp4 to the first 30 seconds"
+python -m ai_video_editor edit -p "resize video.mp4 to 1280x720" -m qwen3:30b
+```
+
+### List Available Models
+
+```bash
+python -m ai_video_editor models
+```
+
+Use any listed model name with `-m`:
+
+```bash
+python -m ai_video_editor -m qwen3:30b
+```
+
+### Get Video Info
+
+```bash
+python -m ai_video_editor info -f input.mp4
+```
+
 ### CLI Options
+
+**Global options** (before any subcommand):
 
 | Flag | Description |
 |---|---|
 | `-p`, `--prompt` | Initial prompt (interactive mode continues after) |
 | `-m`, `--model` | Override the Ollama model |
+| `--log-level` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+
+**Subcommands:**
+
+| Command | Description |
+|---|---|
+| `edit` | Run a single prompt (`-p`) through the agent and exit |
+| `info` | Show video metadata (`-f` for file path) |
+| `models` | List available Ollama models |
 
 ## Project Structure
 
