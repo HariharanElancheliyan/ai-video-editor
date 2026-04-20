@@ -48,3 +48,4 @@ temp_caption_frames/
 # Whisper models
 *.pt
 *.bin
+logs

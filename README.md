@@ -2,6 +2,15 @@
 
 An AI-powered video editing tool that uses [Ollama](https://ollama.com/) LLMs and FFmpeg to perform video editing tasks through natural language. Describe what you want done and the agent will select and execute the right FFmpeg operations automatically.
 
+## Screenshots
+
+### Agent Capabilities
+![Agent Capabilities](Screenshots/abilities.png)
+
+### Format Conversion Example
+![Format Conversion](Screenshots/format%20conversion.png)
+
+
 ## Features
 
 - **Natural Language Editing** — describe edits in plain English; the agent plans and executes FFmpeg commands
