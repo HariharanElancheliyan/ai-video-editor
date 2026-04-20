@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Project-specific
+output/
+temp/
+temp_caption_frames/
+*.srt
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.webm
+*.gif
+*.mp3
+*.wav
+*.flac
+
+# Whisper models
+*.pt
+*.bin
