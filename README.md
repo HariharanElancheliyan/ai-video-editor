@@ -5,10 +5,10 @@ An AI-powered video editing tool that uses [Ollama](https://ollama.com/) LLMs an
 ## Screenshots
 
 ### Agent Capabilities
-![Agent Capabilities](Screenshots/abilities.png)
+![Agent Capabilities](screenshots/abilities.png)
 
 ### Format Conversion Example
-![Format Conversion](Screenshots/format%20conversion.png)
+![Format Conversion](screenshots/format%20conversion.png)
 
 
 ## Features
